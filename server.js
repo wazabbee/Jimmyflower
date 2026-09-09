@@ -48,7 +48,7 @@ io.on('connection', (socket) => {
             id: Date.now(),
             sender,
             text,
-            timestamp: new Date().toLocaleString('zh-TW', { hour12: false })
+            timestamp: new Date().toLocaleString('zh-TW', { hour12: false, timeZone: 'Asia/Taipei' })
         };
 
         // 讀取現有留言並追加新留言
