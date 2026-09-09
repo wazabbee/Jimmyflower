@@ -2,13 +2,14 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>2人專屬聊天室（含離線留言）</title>
+    <title>2人專屬聊天室（彈性版）</title>
     <style>
         body { font-family: sans-serif; max-width: 500px; margin: 30px auto; padding: 20px; background: #f4f4f9; }
         #chat-box { height: 300px; border: 1px solid #ccc; background: #fff; overflow-y: scroll; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
         .message { margin-bottom: 8px; }
         .system { color: #888; font-style: italic; }
         .hidden { display: none; }
+        input[type="text"] { padding: 5px; margin: 5px 0; }
     </style>
 </head>
 <body>
@@ -17,7 +18,8 @@
 
     <!-- 登入區塊 -->
     <div id="login-section">
-        <input type="text" id="username-input" placeholder="輸入你的名字 (例如: Alice)">
+        <p><input type="text" id="username-input" placeholder="輸入你的名字 (例如: Abby)"></p>
+        <p><input type="text" id="target-input" placeholder="輸入聊天對象的名字 (例如: Bob)"></p>
         <button id="login-btn">進入聊天</button>
     </div>
 
@@ -40,6 +42,7 @@
         const loginSection = document.getElementById('login-section');
         const chatSection = document.getElementById('chat-section');
         const usernameInput = document.getElementById('username-input');
+        const targetInput = document.getElementById('target-input');
         const loginBtn = document.getElementById('login-btn');
         
         const myNameSpan = document.getElementById('my-name');
@@ -53,10 +56,14 @@
 
         loginBtn.addEventListener('click', () => {
             myUsername = usernameInput.value.trim();
-            if (!myUsername) return alert('請輸入名字！');
+            targetUsername = targetInput.value.trim();
 
-            // 假設 2 人聊天室，若我是 Alice，對象就是 Bob；反之亦然
-            targetUsername = (myUsername.toLowerCase() === 'alice') ? 'Bob' : 'Alice';
+            if (!myUsername || !targetUsername) {
+                return alert('請完整填寫「你的名字」與「聊天對象的名字」！');
+            }
+            if (myUsername === targetUsername) {
+                return alert('自己不能跟自己聊天喔！');
+            }
 
             myNameSpan.textContent = myUsername;
             targetNameSpan.textContent = targetUsername;
