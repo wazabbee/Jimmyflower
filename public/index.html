@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>2人專屬聊天室（含離線留言）</title>
+    <style>
+        body { font-family: sans-serif; max-width: 500px; margin: 30px auto; padding: 20px; background: #f4f4f9; }
+        #chat-box { height: 300px; border: 1px solid #ccc; background: #fff; overflow-y: scroll; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+        .message { margin-bottom: 8px; }
+        .system { color: #888; font-style: italic; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <h2>2人專屬聊天室</h2>
+
+    <!-- 登入區塊 -->
+    <div id="login-section">
+        <input type="text" id="username-input" placeholder="輸入你的名字 (例如: Alice)">
+        <button id="login-btn">進入聊天</button>
+    </div>
+
+    <!-- 聊天區塊 -->
+    <div id="chat-section" class="hidden">
+        <p>目前登入身分：<span id="my-name" style="font-weight: bold; color: #007bff;"></span></p>
+        <p>聊天對象：<span id="target-name" style="font-weight: bold; color: #28a745;"></span></p>
+        
+        <div id="chat-box"></div>
+
+        <input type="text" id="message-input" placeholder="輸入訊息..." style="width: 75%;">
+        <button id="send-btn">發送</button>
+    </div>
+
+    <!-- 引入 Socket.io 用戶端腳本 -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        const loginSection = document.getElementById('login-section');
+        const chatSection = document.getElementById('chat-section');
+        const usernameInput = document.getElementById('username-input');
+        const loginBtn = document.getElementById('login-btn');
+        
+        const myNameSpan = document.getElementById('my-name');
+        const targetNameSpan = document.getElementById('target-name');
+        const chatBox = document.getElementById('chat-box');
+        const messageInput = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        let myUsername = '';
+        let targetUsername = '';
+
+        loginBtn.addEventListener('click', () => {
+            myUsername = usernameInput.value.trim();
+            if (!myUsername) return alert('請輸入名字！');
+
+            // 假設 2 人聊天室，若我是 Alice，對象就是 Bob；反之亦然
+            targetUsername = (myUsername.toLowerCase() === 'alice') ? 'Bob' : 'Alice';
+
+            myNameSpan.textContent = myUsername;
+            targetNameSpan.textContent = targetUsername;
+
+            loginSection.classList.add('hidden');
+            chatSection.classList.remove('hidden');
+
+            // 向伺服器註冊身分
+            socket.emit('register', myUsername);
+        });
+
+        // 發送訊息
+        sendBtn.addEventListener('click', () => {
+            const text = messageInput.value.trim();
+            if (!text) return;
+
+            appendMessage('我', text, 'new');
+            socket.emit('private-message', { recipient: targetUsername, text });
+            messageInput.value = '';
+        });
+
+        // 接收即時訊息
+        socket.on('chat-message', (data) => {
+            appendMessage(data.sender, data.text, data.timestamp);
+        });
+
+        // 接收離線留言
+        socket.on('offline-messages', (messages) => {
+            appendSystemMessage('--- 以下是您離線時收到的留言 ---');
+            messages.forEach(msg => {
+                appendMessage(msg.sender, msg.text, msg.timestamp + ' (離線留言)');
+            });
+            appendSystemMessage('----------------------------------');
+        });
+
+        // 提示訊息已轉為離線留言
+        socket.on('message-stored', (data) => {
+            appendSystemMessage(`[系統] ${data.recipient} 目前離線，訊息已存為離線留言。`);
+        });
+
+        function appendMessage(sender, text, time) {
+            const div = document.createElement('div');
+            div.className = 'message';
+            div.innerHTML = `<strong>${sender}</strong>: ${text} <span style="font-size: 0.8em; color: #aaa;">(${time})</span>`;
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function appendSystemMessage(text) {
+            const div = document.createElement('div');
+            div.className = 'message system';
+            div.textContent = text;
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
+</body>
+</html>
